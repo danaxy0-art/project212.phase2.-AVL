@@ -179,53 +179,67 @@ public class AVL<T>{
 		        return node; 
 		    }
 
-	public boolean removeKey(int k) { //REMOVE
-		//serch for the k
-		int k1 = k;
-		BSTNode<T> p = root;
-		BSTNode<T> q = null;
-		while (p != null) {
-			if(k1 < p.key) {
-				q = p;
-				p = p.left;
-			}else if(k1 > p.key) {
-				q = p;
-				p = p.right;
-			}
-			else {//found the key
-				if(p.left != null && p.right != null){
-					BSTNode<T> min = p.right;
-					q = p;
-					while (min.left != null) {
-						q = min;
-						min = min.left;
-					}
-					p.key = min.key;
-					p.data = min.data;
-					k1 = min.key;
-					p = min; //now fall bake to either case 1 or case 2
-				}
-				}
-				if(p.left != null) {
-					p = p.left;
-				}else {
-					p = p.right;
-				}
-				if(q == null) {
-					root = p;
-				}else {
-					if(k1 < q.key) {
-						q.left = p;
-					}else {
-						q.right = p;
-					}
-					current = root;
-					return true;
-				}
-			}
-			return false; //not found
-		}
-		
+		    public boolean removeKey(int key) {
+
+		        BSTNode<T> parent = null;
+		        BSTNode<T> current = root;
+
+		        // 1) ابحث عن الـ node
+		        while (current != null && current.key != key) {
+		            parent = current;
+		            if (key < current.key)
+		                current = current.left;
+		            else
+		                current = current.right;
+		        }
+
+		        // لم يتم العثور عليه
+		        if (current == null)
+		            return false;
+
+		        // 2) إذا كان للـ node طفل واحد أو لا أطفال
+		        if (current.left == null || current.right == null) {
+
+		            BSTNode<T> child;
+		            if (current.left != null)
+		                child = current.left;
+		            else
+		                child = current.right;
+
+		            if (parent == null) {
+		                // حذف الـ root
+		                root = child;
+		            } else if (current == parent.left) {
+		                parent.left = child;
+		            } else {
+		                parent.right = child;
+		            }
+
+		            return true;
+		        }
+
+		        // 3) في حالة وجود طفلين (نستخدم الأصغر في اليمين)
+		        BSTNode<T> successorParent = current;
+		        BSTNode<T> successor = current.right;
+
+		        while (successor.left != null) {
+		            successorParent = successor;
+		            successor = successor.left;
+		        }
+
+		        // نسخ البيانات
+		        current.key = successor.key;
+		        current.data = successor.data;
+
+		        // حذف successor
+		        if (successorParent.left == successor)
+		            successorParent.left = successor.right;
+		        else
+		            successorParent.right = successor.right;
+
+		        return true;
+		    }
+
 
 		//INORDER
 		public void inOrder() {
@@ -258,7 +272,10 @@ public class AVL<T>{
 		    return current.data;
 		}
 
-	
+		public void delete(Product p) {
+	        if (p == null) return;
+	        removeKey(p.getProductId());
+	    }
 	
 	}
 	
