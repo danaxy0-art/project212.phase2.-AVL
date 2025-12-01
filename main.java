@@ -1,18 +1,22 @@
-package project212.phase2;
+package project212.phase2.AVL;
 
 import java.time.LocalDate;
 import java.util.Scanner;
 import java.util.Stack;
+
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.io.File;
 
 public class main {
 
     public static boolean VERBOSE = false;
 
     // Lists 
-    private static BST<Customer> customers_list;
-    private static BST<Order>    orders_list;
-    private static BST<Product>  products_list;
-    private static BST<Review>   reviews_list;
+    private static AVL<Customer> customers_list;
+    private static AVL<Order>    orders_list;
+    private static AVL<Product>  products_list;
+    private static AVL<Review>   reviews_list;
 
     // Managers
     private static Reviews   all_Reviews;
@@ -23,7 +27,7 @@ public class main {
     private static final Scanner input = new Scanner(System.in);
 
     //CSV paths
-    private static final String BASE_PATH     = "C:\\Users\\danam\\Desktop\\project212\\phase2\\";
+    private static final String BASE_PATH     = "C:\\Users\\danam\\Desktop\\project212\\phase2\\AVL\\";
     private static final String PRODUCTS_CSV  = BASE_PATH + "prodcuts.csv";   
     private static final String CUSTOMERS_CSV = BASE_PATH + "customers.csv";
     private static final String ORDERS_CSV    = BASE_PATH + "orders.csv";
@@ -38,10 +42,10 @@ public class main {
     }
 
     public main() {
-        customers_list = new BST<>();
-        orders_list    = new BST<>();
-        products_list  = new BST<>();
-        reviews_list   = new BST<>();
+        customers_list = new AVL<>();
+        orders_list    = new AVL<>();
+        products_list  = new AVL<>();
+        reviews_list   = new AVL<>();
 
         all_products   = new Products(products_list);
         all_Customers  = new Customers(customers_list);
@@ -56,10 +60,29 @@ public class main {
         all_Reviews.load_revews(REVIEWS_CSV); 
     }
 
-    public static void add_Customer(Customer c) { ensureLoaded(); all_Customers.addCustomer(c); }
-    public static void add_Product(Product p)   { ensureLoaded(); all_products.addProduct(p);  }
-    public static void add_Order(Order o)       { ensureLoaded(); all_Orders.addOrder(o);      }
-    public static void add_Review(Review r)     { ensureLoaded(); all_Reviews.addReview(r);    }
+    public static void add_Customer(Customer c) { 
+        ensureLoaded(); 
+        all_Customers.addCustomer(c);  
+        all_Customers.saveCustomers(CUSTOMERS_CSV);
+    }
+
+    public static void add_Product(Product p)   { 
+        ensureLoaded(); 
+        all_products.addProduct(p);  
+        all_products.saveProducts(PRODUCTS_CSV);
+    }
+
+    public static void add_Order(Order o)       { 
+        ensureLoaded(); 
+        all_Orders.addOrder(o);      
+        all_Orders.saveOrders(ORDERS_CSV);
+    }
+
+    public static void add_Review(Review r)     { 
+        ensureLoaded(); 
+        all_Reviews.addReview(r);    
+        all_Reviews.saveReviews(REVIEWS_CSV);
+    }
 
     public static int countCustomers(BSTNode<Customer> node) {
         if (node == null) return 0;
@@ -90,7 +113,7 @@ public class main {
 
     public static void displayCustomersAlphabetically() {
         ensureLoaded();
-        BST<Customer> bst = all_Customers.get_customers();
+        AVL<Customer> bst = all_Customers.get_customers();
 
         if (bst.empty()) {
             System.out.println("No customers exist");
@@ -227,198 +250,7 @@ public class main {
         if (!found) System.out.println("No common high-rated products found.");
     }
 
-    // ======================= INPUT HELPERS ==========================
-    private static int readInt(String prompt) {
-        while (true) {
-            System.out.print(prompt);
-            if (input.hasNextInt()) {
-                int v = input.nextInt();
-                input.nextLine();
-                return v;
-            } else {
-                System.out.println("Invalid input. Please enter a whole number.");
-                input.nextLine();
-            }
-        }
-    }
-
-    private static double readDouble(String prompt) {
-        while (true) {
-            System.out.print(prompt);
-            if (input.hasNextDouble()) {
-                double v = input.nextDouble();
-                input.nextLine();
-                return v;
-            } else {
-                System.out.println("Invalid input. Please enter a decimal number (e.g., 12.5).");
-                input.nextLine();
-            }
-        }
-    }
-
-    private static String readLine(String prompt) {
-        System.out.print(prompt);
-        return input.nextLine().trim();
-    }
-
-    private static boolean isValidName(String s) {
-        if (s == null) return false;
-        s = s.trim();
-        if (s.isEmpty() || s.length() > 50) return false;
-        return s.matches("[\\p{IsArabic}A-Za-z\\s\\-']+");
-    }
-
-    private static String readName(String prompt) {
-        while (true) {
-            System.out.print(prompt);
-            String name = input.nextLine().trim().replaceAll("\\s+", " ");
-            if (isValidName(name)) return name;
-            System.out.println("Invalid name. Use letters only (Arabic/English). Spaces, '-' and ' are allowed.");
-        }
-    }
-
-    private static LocalDate readDateFlexible(String prompt) {
-        String[] patterns = {
-            "yyyy-MM-dd", "yyyy-M-d", "yyyy-M-dd", "yyyy-MM-d",
-            "yyyy/MM/dd", "yyyy/M/d", "yyyy/M/dd", "yyyy/MM/d"
-        };
-        while (true) {
-            String s = readLine(prompt).trim();
-            for (String p : patterns) {
-                try {
-                    java.time.format.DateTimeFormatter f =
-                        java.time.format.DateTimeFormatter.ofPattern(p);
-                    return LocalDate.parse(s, f);
-                } catch (Exception ignore) {}
-            }
-            System.out.println("Is not valid");
-        }
-    }
-
-    private static int readRating(String prompt) {
-        while (true) {
-            int r = readInt(prompt);
-            if (r >= 1 && r <= 5) return r;
-            System.out.println("Rating must be between 1 and 5. Try again.");
-        }
-    }
-
-    private static int readNewProductId(String prompt) {
-        ensureLoaded();
-        while (true) {
-            System.out.print(prompt);
-            if (input.hasNextInt()) {
-                int id = input.nextInt(); 
-                input.nextLine();
-
-                if (all_products != null && all_products.SearchProductById(id) != null) {
-                    System.out.println("Product ID " + id + " Is exist before.");
-                    continue;
-                }
-                return id; 
-            } else {
-                System.out.println("Invalid input. Please enter a numeric ID.");
-                input.nextLine();
-            }
-        }
-    }
-
-    private static int readExistingProductId(String prompt) {
-        ensureLoaded();
-        while (true) {
-            System.out.print(prompt);
-            if (input.hasNextInt()) {
-                int id = input.nextInt(); 
-                input.nextLine();
-                if (all_products == null || all_products.SearchProductById(id) == null) {
-                    System.out.println("Product ID " + id + " Is not exist.");
-                    continue;
-                }
-                return id;
-            } else {
-                System.out.println("Invalid input. Please enter a numeric Product ID.");
-                input.nextLine();
-            }
-        }
-    }
-
-    private static String readValidProductIds(String prompt) {
-        ensureLoaded();
-        while (true) {
-            String s = readLine(prompt).trim();
-            if (s.isEmpty()) { 
-                System.out.println("Enter at least one product ID."); 
-                continue; 
-            }
-            String[] parts = s.split(";");
-            boolean ok = true;
-            for (String part : parts) {
-                try {
-                    int id = Integer.parseInt(part.trim());
-                    if (all_products == null || all_products.SearchProductById(id) == null) { 
-                        ok = false; 
-                        break; 
-                    }
-                } catch (NumberFormatException ex) { 
-                    ok = false; 
-                    break; 
-                }
-            }
-            if (!ok) {
-                System.out.println("Try again ^-^");
-                continue;
-            }
-            return s;
-        }
-    }
-
-    private static int readUniqueCustomerId(String prompt) {
-        ensureLoaded();
-        while (true) {
-            int id = readInt(prompt);
-            if (all_Customers != null && all_Customers.searchById(id) != null) {
-                System.out.println("Customer with ID " + id + " already exists. Enter another ID.");
-                continue;
-            }
-            return id;
-        }
-    }
-
-    private static int readExistingCustomerId(String prompt) {
-        ensureLoaded();
-        while (true) {
-            int id = readInt(prompt);
-            if (all_Customers == null || all_Customers.searchById(id) == null) {
-                System.out.println(" Customer ID " + id + " not found. Enter an existing customer ID.");
-                continue;
-            }
-            return id;
-        }
-    }
-
-    private static int readUniqueOrderId(String prompt) {
-        ensureLoaded();
-        while (true) {
-            int id = readInt(prompt);
-            if (all_Orders != null && all_Orders.searchOrderById(id) != null) {
-                System.out.println("Order with ID " + id + " already exists. Enter another ID.");
-                continue;
-            }
-            return id;
-        }
-    }
-
-    private static int readUniqueReviewId(String prompt) {
-        ensureLoaded();
-        while (true) {
-            int id = readInt(prompt);
-            if (all_Reviews != null && all_Reviews.SearchReviewById(id) != null) {
-                System.out.println("Review with ID " + id + " already exists. Enter another ID.");
-                continue;
-            }
-            return id;
-        }
-    }
+    //PRODUCT RANGE 
     private static void showProductsInPriceRange() {
         ensureLoaded();
         double minPrice = readDouble("Enter minimum price: ");
@@ -454,7 +286,23 @@ public class main {
         if (!found) System.out.println("No products found in this price range.");
     }
 
-    private static void showCustomersWhoReviewedProduct() {
+
+    private static double readDouble(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            if (input.hasNextDouble()) {
+                double v = input.nextDouble();
+                input.nextLine(); // مهم لمسح السطر المتبقي
+                return v;
+            } else {
+                System.out.println("Invalid input. Enter a decimal number.");
+                input.nextLine();
+            }
+        }
+    }
+
+
+	private static void showCustomersWhoReviewedProduct() {
         ensureLoaded();
         int prodId = readExistingProductId("Enter Product ID to find reviewers: ");
 
@@ -489,7 +337,27 @@ public class main {
         if (!found) System.out.println("No customers reviewed this product.");
     }
 
-    // ======================= MAIN MENU ==========================
+	private static int readExistingProductId(String prompt) {
+	    ensureLoaded(); 
+	    while (true) {
+	        System.out.print(prompt);
+	        if (input.hasNextInt()) {
+	            int id = input.nextInt();
+	            input.nextLine(); 
+	            if (all_products != null && all_products.SearchProductById(id) != null) {
+	                return id; 
+	            } else {
+	                System.out.println("Product ID " + id + " does not exist. Try again.");
+	            }
+	        } else {
+	            System.out.println("Invalid input. Please enter a numeric Product ID.");
+	            input.nextLine();
+	        }
+	    }
+	}
+
+
+	// ======================= MAIN MENU ==========================
     public static void main(String[] args) {
         main e1 = new main();
         ensureLoaded(); 
@@ -507,9 +375,10 @@ public class main {
             System.out.println("8: Display all orders");
             System.out.println("9: Display all orders between 2 dates");
             System.out.println("10: Show common high-rated products for 2 customers");
-            System.out.println("11: Display products within a price range");
-            System.out.println("12: Display customers who reviewed a specific product");
-            System.out.println("13: Exit");
+            System.out.println("11: Remove product ");
+            System.out.println("12: Display products within a price range");
+            System.out.println("13: Display customers who reviewed a specific product");
+            System.out.println("14: Exit");
 
             choice = readInt("Enter your choice: ");
 
@@ -525,21 +394,21 @@ public class main {
                     break;
                 }
                 case 2: { 
-                    int id      = readNewProductId("Enter NEW Product ID (<101 OR >150; if 101–150 it must NOT exist now): ");
-                    String name = readName("Enter Product Name: ");
-                    double price= readDouble("Enter Price: ");
-                    int qty     = readInt("Enter Quantity: ");
-                    Product p   = new Product(id, name, price, qty);
-                    add_Product(p);
-                    System.out.println("Product added successfully.");
-                    break;
+                	int id = readNewProductId("Enter NEW Product ID :");
+                	String name = readName("Enter Product Name: ");
+                	double price= readDouble("Enter Price: ");
+                	int qty = readInt("Enter Quantity: ");
+                	Product p = new Product(id, name, price, qty);
+                	add_Product(p);
+                	System.out.println("Product added successfully.");
+                	break;
                 }
                 case 3: { 
                     int id      = readUniqueCustomerId("Enter Customer ID [new]: ");
                     String name = readName("Enter Customer Name: ");
                     String email= readLine("Enter Customer Email: ");
                     Customer c  = new Customer(id, name, email);
-                    add_Customer(c);
+                    add_Customer(c); // سيتم الحفظ داخل add_Customer
                     System.out.println("Customer added successfully.");
                     break;
                 }
@@ -565,7 +434,7 @@ public class main {
                     String status = readLine("Enter Status (Pending/Processing/Shipped/Delivered/Cancelled/Returned): ");
 
                     Order o = new Order(oid, cid, prod, total, date, status);
-                    add_Order(o);
+                    add_Order(o); // سيتم الحفظ داخل add_Order
                     System.out.println("Order added successfully.");
                     break;
                 }
@@ -576,12 +445,12 @@ public class main {
                     int rating  = readRating("Enter Rating (1–5): ");
                     String comment = readLine("Enter Comment: ");
                     Review r = new Review(rid, pid, cid1, rating, comment);
-                    add_Review(r);
+                    add_Review(r); // سيتم الحفظ داخل add_Review
                     System.out.println("Review added successfully.");
                     break;
                 }
                 case 6:{
-                	 displayCustomersAlphabetically();
+                     displayCustomersAlphabetically();
                      break;
                 }
                 case 7:{
@@ -614,7 +483,6 @@ public class main {
 
                         current = stack.pop();
                         Order o1 = current.data;
-
                         if (!o1.getOrderDate().isBefore(startDate) && !o1.getOrderDate().isAfter(endDate)) {
                             System.out.println("OrderID: " + o1.getOrderId()
                                 + " | CustomerID: " + o1.getCustomerId()
@@ -631,22 +499,36 @@ public class main {
                     if (!any) System.out.println("No results.");
                     System.out.println("-----------------------------------");
                     break;
+                
                 }
                 case 10: {
-                    int c1 = readExistingCustomerId("Enter first customer ID [existing]: ");
-                    int c2 = readExistingCustomerId("Enter second customer ID [existing]: ");
+                    int c1 = readExistingCustomerId("Enter first Product ID [existing]: ");
+                    int c2 = readExistingCustomerId("Enter second Product ID [existing]: ");
                     showCommonHighRatedProducts(c1, c2);
                     break;
                 }
-                 case 11:{
+                case 11: { 
+                	ensureLoaded();
+                    int pid = readExistingProductId("Enter Product ID to remove: ");
+                    Product p = all_products.SearchProductById(pid);
+                    if (p != null) {
+                        all_products.removeProduct(pid);
+                        System.out.println("Product ID " + pid + " (" + p.getName() + ") removed successfully.");
+                    } else {
+                        System.out.println("Product not found.");
+                    }
+                    break;
+                	
+                }
+                 case 12:{
                     showProductsInPriceRange();
                     break;
                 }
-                case 12:{
+                case 13:{
                     showCustomersWhoReviewedProduct();
                     break;
                 }
-                case 13:{
+                case 14:{
                     System.out.println("Goodbye! ^-^");
                     break;
                 }
@@ -655,8 +537,135 @@ public class main {
                     break;
                 }
             }
-        } while (choice != 13);
+        } while (choice != 14);
 
         input.close();
     }
+
+    private static final Scanner input1 = new Scanner(System.in);
+
+    private static int readInt(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            if (input.hasNextInt()) {
+                int v = input.nextInt();
+                input.nextLine();
+                return v;
+            } else {
+                System.out.println("Invalid input. Please enter an integer.");
+                input.nextLine();
+            }
+        }
+    }
+
+    private static String readLine(String prompt) {
+        System.out.print(prompt);
+        return input.nextLine().trim();
+    }
+
+    private static String readName(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            String name = input.nextLine().trim();
+            if (!name.isEmpty() && name.matches("[\\p{IsArabic}A-Za-z\\s\\-']+")) {
+                return name;
+            }
+            System.out.println("Invalid name. Use letters only. Spaces, '-' and ' are allowed.");
+        }
+    }
+
+    private static int readNewProductId(String prompt) {
+        while (true) {
+            int id = readInt(prompt);
+            if (all_products.SearchProductById(id) == null) return id;
+            System.out.println("Product ID already exists. Enter another ID.");
+        }
+    }
+
+    private static int readUniqueCustomerId(String prompt) {
+        while (true) {
+            int id = readInt(prompt);
+            if (all_Customers.searchById(id) == null) return id;
+            System.out.println("Customer ID already exists. Enter another ID.");
+        }
+    }
+
+    private static int readExistingCustomerId(String prompt) {
+    	ensureLoaded();
+        while (true) {
+            int id = readInt(prompt);
+            if (all_products != null && all_products.SearchProductById(id) != null) {
+                return id;
+            }
+            System.out.println("Product ID " + id + " does not exist. Enter a valid product ID.");
+        }
+        }
+
+    private static int readUniqueReviewId(String prompt) {
+        while (true) {
+            int id = readInt(prompt);
+            if (all_Reviews.SearchReviewById(id) == null) return id;
+            System.out.println("Review ID already exists. Enter another ID.");
+        }
+    }
+
+    private static int readUniqueOrderId(String prompt) {
+        while (true) {
+            int id = readInt(prompt);
+            if (all_Orders.searchOrderById(id) == null) return id;
+            System.out.println("Order ID already exists. Enter another ID.");
+        }
+    }
+
+    private static int readRating(String prompt) {
+        while (true) {
+            int r = readInt(prompt);
+            if (r >= 1 && r <= 5) return r;
+            System.out.println("Rating must be between 1 and 5.");
+        }
+    }
+
+    private static LocalDate readDateFlexible(String prompt) {
+        String[] patterns = {
+            "yyyy-MM-dd", "yyyy-M-d", "yyyy-M-dd", "yyyy-MM-d",
+            "yyyy/MM/dd", "yyyy/M/d", "yyyy/M/dd", "yyyy/MM/d"
+        };
+        while (true) {
+            String s = readLine(prompt);
+            for (String p : patterns) {
+                try {
+                    java.time.format.DateTimeFormatter f = java.time.format.DateTimeFormatter.ofPattern(p);
+                    return LocalDate.parse(s, f);
+                } catch (Exception ignore) {}
+            }
+            System.out.println("Invalid date format. Try again.");
+        }
+    }
+
+    private static String readValidProductIds(String prompt) {
+        while (true) {
+            String s = readLine(prompt);
+            if (s.isEmpty()) {
+                System.out.println("Enter at least one product ID.");
+                continue;
+            }
+            String[] parts = s.split(";");
+            boolean ok = true;
+            for (String part : parts) {
+                try {
+                    int id = Integer.parseInt(part.trim());
+                    if (all_products.SearchProductById(id) == null) {
+                        ok = false;
+                        break;
+                    }
+                } catch (NumberFormatException e) {
+                    ok = false;
+                    break;
+                }
+            }
+            if (ok) return s;
+            System.out.println("Invalid input. Enter valid existing product IDs separated by ';'");
+        }
+    }
+
 }
