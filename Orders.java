@@ -199,4 +199,42 @@ public class Orders {
             System.out.println("Error saving orders: " + e.getMessage());
         }
     }
+
+    public void saveOrders(String ordersCsv) {
+        if (all_orders == null || all_orders.empty()) {
+            System.out.println("No orders to save.");
+            return;
+        }
+
+        try (PrintWriter pw = new PrintWriter(new FileWriter(ordersCsv))) {
+            Stack<BSTNode<Order>> stack = new Stack<>();
+            BSTNode<Order> current = all_orders.getRoot();
+
+            while (current != null || !stack.isEmpty()) {
+                while (current != null) {
+                    stack.push(current);
+                    current = current.left;
+                }
+
+                current = stack.pop();
+                Order o = current.data;
+
+                // كتابة الـ Order بصيغة CSV:
+                // orderId,customerId,prodIds,totalPrice,orderDate,status
+                pw.println(o.getOrderId() + "," 
+                        + o.getCustomerId() + "," 
+                        + o.getProd_Ids() + "," 
+                        + o.getTotalPrice() + "," 
+                        + o.getOrderDate() + "," 
+                        + o.getStatus());
+
+                current = current.right;
+            }
+
+            System.out.println("Orders saved successfully to: " + ordersCsv);
+        } catch (Exception e) {
+            System.out.println("Error saving orders: " + e.getMessage());
+        }
+    }
+
 }
