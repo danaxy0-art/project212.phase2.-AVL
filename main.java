@@ -8,6 +8,8 @@ public class main {
 
     public static boolean VERBOSE = false;
 
+
+
     // Lists 
     private static AVL<Customer> customers_list;
     private static AVL<Order>    orders_list;
@@ -18,7 +20,7 @@ public class main {
     private static Reviews   all_Reviews;
     private static Customers all_Customers;
     private static Orders    all_Orders;
-    private static Products  all_products;
+    public static Products  all_products;
 
     private static final Scanner input = new Scanner(System.in);
 
@@ -28,6 +30,9 @@ public class main {
     private static final String CUSTOMERS_CSV = BASE_PATH + "customers.csv";
     private static final String ORDERS_CSV    = BASE_PATH + "orders.csv";
     private static final String REVIEWS_CSV   = BASE_PATH + "reviews.csv";
+
+	public static final String products = null;
+	
 
     //Auto-load once
     private static boolean dataLoaded = false;
@@ -443,26 +448,43 @@ public class main {
                     break;
                 }
 
-                case 4: { 
+                case 4: {
+                    
+                }
+
                     int oid      = readUniqueOrderId("Enter Order ID [new]: ");
                     int cid      = readExistingCustomerId("Enter Customer ID [existing]: ");
                     String prod  = readValidProductIds("Enter Product IDs (semicolon-separated, must exist): ");
+                    
+                    String[] prodList = prod.split(";");
+                    boolean outOfStock = false;
+                    for (String pIdStr : prodList) {
+                        int pid = Integer.parseInt(pIdStr.trim());
+                        Product p = all_products.SearchProductById(pid);
+                        if (p.getStock() == 0) {
+                            System.out.println("\nProduct " + pid + " is OUT OF STOCK.");
+                            outOfStock = true;
+                        }
+                    }
+                    if (outOfStock) break; // ارجع للقائمة الرئيسية بدون متابعة باقي البيانات
+
+                    // إذا كل المنتجات متوفرة
                     double total = readDouble("Enter Total Price: ");
                     LocalDate date = readDateFlexible("Enter Order Date (e.g., 2025-2-3): ");
                     String status = readLine("Enter Status (Pending/Processing/Shipped/Delivered/Cancelled/Returned): ");
+
                     Order o = new Order(oid, cid, prod, total, date, status);
                     add_Order(o);
                     System.out.println("Order added successfully.");
                     break;
-                }
-
+                
                 case 5: { 
                     int rid     = readUniqueReviewId("Enter Review ID [new]: ");
                     int pid     = readExistingProductId("Enter Product ID [existing]: ");
-                    int cid     = readExistingCustomerId("Enter Customer ID [existing]: ");
+                    int cid1     = readExistingCustomerId("Enter Customer ID [existing]: ");
                     int rating  = readRating("Enter Rating (1–5): ");
                     String comment = readLine("Enter Comment: ");
-                    Review r = new Review(rid, pid, cid, rating, comment);
+                    Review r = new Review(rid, pid, cid1, rating, comment);
                     add_Review(r);
                     System.out.println("Review added successfully.");
                     break;
@@ -504,15 +526,15 @@ public class main {
                         }
 
                         current = stack.pop();
-                        Order o = current.data;
+                        Order o1 = current.data;
 
-                        if (!o.getOrderDate().isBefore(startDate) && !o.getOrderDate().isAfter(endDate)) {
-                            System.out.println("OrderID: " + o.getOrderId()
-                                + " | CustomerID: " + o.getCustomerId()
-                                + " | Products: " + o.getProd_Ids()
-                                + " | TotalPrice: " + o.getTotalPrice()
-                                + " | Date: " + o.getOrderDate()
-                                + " | Status: " + o.getStatus());
+                        if (!o1.getOrderDate().isBefore(startDate) && !o1.getOrderDate().isAfter(endDate)) {
+                            System.out.println("OrderID: " + o1.getOrderId()
+                                + " | CustomerID: " + o1.getCustomerId()
+                                + " | Products: " + o1.getProd_Ids()
+                                + " | TotalPrice: " + o1.getTotalPrice()
+                                + " | Date: " + o1.getOrderDate()
+                                + " | Status: " + o1.getStatus());
                             any = true;
                         }
 
