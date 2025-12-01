@@ -165,4 +165,40 @@ public class Reviews {
             System.out.println("Error saving reviews: " + e.getMessage());
         }
     }
+
+    public void saveReviews(String reviewsCsv) {
+        if (reviews == null || reviews.empty()) {
+            System.out.println("No reviews to save.");
+            return;
+        }
+
+        try (PrintWriter pw = new PrintWriter(new FileWriter(reviewsCsv))) {
+            Stack<BSTNode<Review>> stack = new Stack<>();
+            BSTNode<Review> current = reviews.getRoot();
+
+            while (current != null || !stack.isEmpty()) {
+                while (current != null) {
+                    stack.push(current);
+                    current = current.left;
+                }
+
+                current = stack.pop();
+                Review r = current.data;
+
+                
+                pw.println(r.getReviewID() + "," 
+                        + r.getProductID() + "," 
+                        + r.getCustomerID() + "," 
+                        + r.getRating() + "," 
+                        + r.getComment());
+
+                current = current.right;
+            }
+
+            System.out.println("Reviews saved successfully to: " + reviewsCsv);
+        } catch (Exception e) {
+            System.out.println("Error saving reviews: " + e.getMessage());
+        }
+    }
+
 }
