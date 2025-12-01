@@ -126,4 +126,39 @@ public class Customers {
             System.out.println("Error saving customers: " + e.getMessage());
         }
     }
+
+    public void saveCustomers(String customersCsv) {
+        if (customers == null || customers.empty()) {
+            System.out.println("No customers to save.");
+            return;
+        }
+
+        try (PrintWriter pw = new PrintWriter(new FileWriter(customersCsv))) {
+            Stack<BSTNode<Customer>> stack = new Stack<>();
+            BSTNode<Customer> current = customers.getRoot();
+
+            while (current != null || !stack.isEmpty()) {
+                while (current != null) {
+                    stack.push(current);
+                    current = current.left;
+                }
+
+                current = stack.pop();
+                Customer c = current.data;
+
+                // كتابة العميل بصيغة CSV:
+                // customerId,name,email
+                pw.println(c.getCustomerId() + "," 
+                        + c.getName() + "," 
+                        + c.getEmail());
+
+                current = current.right;
+            }
+
+            System.out.println("Customers saved successfully to: " + customersCsv);
+        } catch (Exception e) {
+            System.out.println("Error saving customers: " + e.getMessage());
+        }
+    }
+
 }
