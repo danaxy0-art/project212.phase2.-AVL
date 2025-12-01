@@ -1,4 +1,4 @@
-package project212.phase2.AVL;
+package project212.phase2;
 
 import java.time.LocalDate;
 import java.util.Scanner;
@@ -8,15 +8,13 @@ public class main {
 
     public static boolean VERBOSE = false;
 
-
-
     // Lists 
-    private static AVL<Customer> customers_list;
-    private static AVL<Order>    orders_list;
-    private static AVL<Product>  products_list;
-    private static AVL<Review>   reviews_list;
+    private static BST<Customer> customers_list;
+    private static BST<Order>    orders_list;
+    private static BST<Product>  products_list;
+    private static BST<Review>   reviews_list;
 
-    //  Managers
+    // Managers
     private static Reviews   all_Reviews;
     private static Customers all_Customers;
     private static Orders    all_Orders;
@@ -31,10 +29,6 @@ public class main {
     private static final String ORDERS_CSV    = BASE_PATH + "orders.csv";
     private static final String REVIEWS_CSV   = BASE_PATH + "reviews.csv";
 
-	public static final String products = null;
-	
-
-    //Auto-load once
     private static boolean dataLoaded = false;
     private static void ensureLoaded() {
         if (!dataLoaded) {
@@ -43,12 +37,11 @@ public class main {
         }
     }
 
-    // Constructor
     public main() {
-        customers_list = new AVL<>();
-        orders_list    = new AVL<>();
-        products_list  = new AVL<>();
-        reviews_list   = new AVL<>();
+        customers_list = new BST<>();
+        orders_list    = new BST<>();
+        products_list  = new BST<>();
+        reviews_list   = new BST<>();
 
         all_products   = new Products(products_list);
         all_Customers  = new Customers(customers_list);
@@ -56,7 +49,6 @@ public class main {
         all_Reviews    = new Reviews(reviews_list, products_list, customers_list);
     }
 
-    // Load from CSVs  
     public static void Load_all() {
         all_products.loadProducts(PRODUCTS_CSV);
         all_Customers.loadCustomers(CUSTOMERS_CSV);
@@ -64,13 +56,59 @@ public class main {
         all_Reviews.load_revews(REVIEWS_CSV); 
     }
 
-    //Safe add wrappers
     public static void add_Customer(Customer c) { ensureLoaded(); all_Customers.addCustomer(c); }
     public static void add_Product(Product p)   { ensureLoaded(); all_products.addProduct(p);  }
     public static void add_Order(Order o)       { ensureLoaded(); all_Orders.addOrder(o);      }
     public static void add_Review(Review r)     { ensureLoaded(); all_Reviews.addReview(r);    }
 
-    // Show top 3 products
+    public static int countCustomers(BSTNode<Customer> node) {
+        if (node == null) return 0;
+        return 1 + countCustomers(node.left) + countCustomers(node.right);
+    }
+
+    public static void collectCustomersInOrder(BSTNode<Customer> node, Customer[] arr, int[] index) {
+        if (node == null) return;
+
+        collectCustomersInOrder(node.left, arr, index);
+        arr[index[0]++] = node.data;
+        collectCustomersInOrder(node.right, arr, index);
+    }
+
+    public static void sortCustomersByName(Customer[] arr, int size) {
+        for (int i = 0; i < size - 1; i++) {
+            int minIdx = i;
+            for (int j = i + 1; j < size; j++) {
+                if (arr[j].getName().compareToIgnoreCase(arr[minIdx].getName()) < 0) {
+                    minIdx = j;
+                }
+            }
+            Customer temp = arr[i];
+            arr[i] = arr[minIdx];
+            arr[minIdx] = temp;
+        }
+    }
+
+    public static void displayCustomersAlphabetically() {
+        ensureLoaded();
+        BST<Customer> bst = all_Customers.get_customers();
+
+        if (bst.empty()) {
+            System.out.println("No customers exist");
+            return;
+        }
+
+        int size = countCustomers(bst.getRoot());
+        Customer[] arr = new Customer[size];
+        int[] idx = {0};
+        collectCustomersInOrder(bst.getRoot(), arr, idx);
+        sortCustomersByName(arr, size);
+
+        System.out.println("\n=== Customers Sorted Alphabetically ===");
+        for (int i = 0; i < size; i++) arr[i].display();
+        System.out.println("----------------------------------------");
+    }
+
+    // =====================================================================
     public void displayTop3Products() {
         ensureLoaded();
 
@@ -80,12 +118,10 @@ public class main {
         }
 
         Product max1 = null, max2 = null, max3 = null;
-
         Stack<BSTNode<Product>> stack = new Stack<>();
         BSTNode<Product> current = products_list.getRoot();
 
         while (current != null || !stack.isEmpty()) {
-
             while (current != null) {
                 stack.push(current);
                 current = current.left;
@@ -93,7 +129,6 @@ public class main {
 
             current = stack.pop();
             Product cur = current.data;
-
             double rating = cur.getAverageRating();
 
             if (max1 == null || rating > max1.getAverageRating()) {
@@ -131,7 +166,6 @@ public class main {
         System.out.println("-----------------------------------");
     }
 
-    // Common high-rated products
     public static void showCommonHighRatedProducts(int customerId1, int customerId2) {
         ensureLoaded();
         System.out.println("Common Products Reviewed by Both Customers (Avg > 4):");
@@ -146,12 +180,10 @@ public class main {
         }
 
         boolean found = false;
-
         Stack<BSTNode<Product>> productStack = new Stack<>();
         BSTNode<Product> currentProduct = products_list.getRoot();
 
         while (currentProduct != null || !productStack.isEmpty()) {
-
             while (currentProduct != null) {
                 productStack.push(currentProduct);
                 currentProduct = currentProduct.left;
@@ -167,7 +199,6 @@ public class main {
             BSTNode<Review> currentReview = reviews_list.getRoot();
 
             while (currentReview != null || !reviewStack.isEmpty()) {
-
                 while (currentReview != null) {
                     reviewStack.push(currentReview);
                     currentReview = currentReview.left;
@@ -196,7 +227,7 @@ public class main {
         if (!found) System.out.println("No common high-rated products found.");
     }
 
-    // helpers
+    // ======================= INPUT HELPERS ==========================
     private static int readInt(String prompt) {
         while (true) {
             System.out.print(prompt);
@@ -283,10 +314,6 @@ public class main {
                 if (all_products != null && all_products.SearchProductById(id) != null) {
                     System.out.println("Product ID " + id + " Is exist before.");
                     continue;
-                }
-                if (id >= 101 && id <= 150) {
-                    System.out.println("ID is within 101–150 (reserved range). Allowed because it does not currently exist.");
-                    return id;
                 }
                 return id; 
             } else {
@@ -392,25 +419,97 @@ public class main {
             return id;
         }
     }
+    private static void showProductsInPriceRange() {
+        ensureLoaded();
+        double minPrice = readDouble("Enter minimum price: ");
+        double maxPrice = readDouble("Enter maximum price: ");
 
-    // main
+        System.out.println("\nProducts within price range [" + minPrice + " - " + maxPrice + "]:");
+        if (products_list.empty()) {
+            System.out.println("No products available.");
+            return;
+        }
+
+        Stack<BSTNode<Product>> stack = new Stack<>();
+        BSTNode<Product> current = products_list.getRoot();
+
+        boolean found = false;
+        while (current != null || !stack.isEmpty()) {
+            while (current != null) {
+                stack.push(current);
+                current = current.left;
+            }
+            current = stack.pop();
+            Product p = current.data;
+
+            if (p.getPrice() >= minPrice && p.getPrice() <= maxPrice) {
+                System.out.println("ProductID: " + p.getProductId()
+                    + " | Name: " + p.getName()
+                    + " | Price: " + p.getPrice()
+                    + " | Stock: " + p.getStock());
+                found = true;
+            }
+            current = current.right;
+        }
+        if (!found) System.out.println("No products found in this price range.");
+    }
+
+    private static void showCustomersWhoReviewedProduct() {
+        ensureLoaded();
+        int prodId = readExistingProductId("Enter Product ID to find reviewers: ");
+
+        System.out.println("\nCustomers who reviewed Product ID " + prodId + ":");
+        if (reviews_list.empty()) {
+            System.out.println("No reviews available.");
+            return;
+        }
+
+        Stack<BSTNode<Review>> stack = new Stack<>();
+        BSTNode<Review> current = reviews_list.getRoot();
+        boolean found = false;
+
+        while (current != null || !stack.isEmpty()) {
+            while (current != null) {
+                stack.push(current);
+                current = current.left;
+            }
+            current = stack.pop();
+            Review r = current.data;
+
+            if (r.getProductID() == prodId) {
+                Customer c = all_Customers.searchById(r.getCustomerID());
+                if (c != null) {
+                    System.out.println("CustomerID: " + c.getCustomerId() + " | Name: " + c.getName());
+                    found = true;
+                }
+            }
+            current = current.right;
+        }
+
+        if (!found) System.out.println("No customers reviewed this product.");
+    }
+
+    // ======================= MAIN MENU ==========================
     public static void main(String[] args) {
         main e1 = new main();
         ensureLoaded(); 
         int choice;
 
         do {
+            System.out.println("\n===== MAIN MENU =====");
             System.out.println("1: Show loaded file paths");
             System.out.println("2: Add Product");
             System.out.println("3: Add Customer");
             System.out.println("4: Add Order");
             System.out.println("5: Add Review");
-            System.out.println("6: List all customers");
+            System.out.println("6: List customers alphabetically");
             System.out.println("7: Show top 3 products by average rating");
             System.out.println("8: Display all orders");
             System.out.println("9: Display all orders between 2 dates");
             System.out.println("10: Show common high-rated products for 2 customers");
-            System.out.println("11: Exit");
+            System.out.println("11: Display products within a price range");
+            System.out.println("12: Display customers who reviewed a specific product");
+            System.out.println("13: Exit");
 
             choice = readInt("Enter your choice: ");
 
@@ -425,7 +524,6 @@ public class main {
                     System.out.println("-----------------------------------\n");
                     break;
                 }
-
                 case 2: { 
                     int id      = readNewProductId("Enter NEW Product ID (<101 OR >150; if 101–150 it must NOT exist now): ");
                     String name = readName("Enter Product Name: ");
@@ -436,22 +534,16 @@ public class main {
                     System.out.println("Product added successfully.");
                     break;
                 }
-
                 case 3: { 
                     int id      = readUniqueCustomerId("Enter Customer ID [new]: ");
                     String name = readName("Enter Customer Name: ");
                     String email= readLine("Enter Customer Email: ");
                     Customer c  = new Customer(id, name, email);
-
                     add_Customer(c);
                     System.out.println("Customer added successfully.");
                     break;
                 }
-
                 case 4: {
-                    
-                }
-
                     int oid      = readUniqueOrderId("Enter Order ID [new]: ");
                     int cid      = readExistingCustomerId("Enter Customer ID [existing]: ");
                     String prod  = readValidProductIds("Enter Product IDs (semicolon-separated, must exist): ");
@@ -466,9 +558,8 @@ public class main {
                             outOfStock = true;
                         }
                     }
-                    if (outOfStock) break; // ارجع للقائمة الرئيسية بدون متابعة باقي البيانات
+                    if (outOfStock) break;
 
-                    // إذا كل المنتجات متوفرة
                     double total = readDouble("Enter Total Price: ");
                     LocalDate date = readDateFlexible("Enter Order Date (e.g., 2025-2-3): ");
                     String status = readLine("Enter Status (Pending/Processing/Shipped/Delivered/Cancelled/Returned): ");
@@ -477,11 +568,11 @@ public class main {
                     add_Order(o);
                     System.out.println("Order added successfully.");
                     break;
-                
+                }
                 case 5: { 
                     int rid     = readUniqueReviewId("Enter Review ID [new]: ");
                     int pid     = readExistingProductId("Enter Product ID [existing]: ");
-                    int cid1     = readExistingCustomerId("Enter Customer ID [existing]: ");
+                    int cid1    = readExistingCustomerId("Enter Customer ID [existing]: ");
                     int rating  = readRating("Enter Rating (1–5): ");
                     String comment = readLine("Enter Comment: ");
                     Review r = new Review(rid, pid, cid1, rating, comment);
@@ -489,18 +580,14 @@ public class main {
                     System.out.println("Review added successfully.");
                     break;
                 }
-
                 case 6:{
-                    ensureLoaded();
-                    all_Customers.displayAll();
-                    break;
+                	 displayCustomersAlphabetically();
+                     break;
                 }
-
                 case 7:{
                     e1.displayTop3Products();
                     break;
                 }
-
                 case 8:{
                     ensureLoaded();
                     all_Orders.displayAllOrders();
@@ -545,25 +632,30 @@ public class main {
                     System.out.println("-----------------------------------");
                     break;
                 }
-
                 case 10: {
                     int c1 = readExistingCustomerId("Enter first customer ID [existing]: ");
                     int c2 = readExistingCustomerId("Enter second customer ID [existing]: ");
                     showCommonHighRatedProducts(c1, c2);
                     break;
                 }
-
-                case 11:{
+                 case 11:{
+                    showProductsInPriceRange();
+                    break;
+                }
+                case 12:{
+                    showCustomersWhoReviewedProduct();
+                    break;
+                }
+                case 13:{
                     System.out.println("Goodbye! ^-^");
                     break;
                 }
-
                 default:{
                     System.out.println("Unknown choice.");
                     break;
                 }
             }
-        } while (choice != 11);
+        } while (choice != 13);
 
         input.close();
     }
