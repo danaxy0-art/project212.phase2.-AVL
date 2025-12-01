@@ -36,16 +36,16 @@ public class Products {
         boolean inserted = products.insert(p.getProductId(), p);
         if (inserted) {
             if (main.VERBOSE) System.out.println("Product added: " + p.getName());
-            saveAll();
+            saveProducts(filePath);
         }
     }
 
     public void removeProduct(int id) {
         boolean removed = products.removeKey(id);
-        if (removed && main.VERBOSE) {
-            System.out.println("Product removed: " + id);
+        if (removed) {
+            if (main.VERBOSE) System.out.println("Product removed: " + id);
+            saveProducts(filePath);
         }
-        if (removed) saveAll();
     }
 
     public void updateProduct(int id, Product p) {
@@ -54,7 +54,7 @@ public class Products {
             if (main.VERBOSE) System.out.println("Product does not exist");
         } else {
             old.UpdateProduct(p);
-            saveAll();
+            saveProducts(filePath);
         }
     }
 
@@ -131,10 +131,10 @@ public class Products {
             System.out.println("Error reading products: " + e.getMessage());
         }
     }
+    public void saveProducts(String productsCsv) {
+        if (productsCsv == null || productsCsv.isEmpty()) return;
 
-    private void saveAll() {
-        if (filePath == null || filePath.isEmpty()) return;
-        try (PrintWriter pw = new PrintWriter(new FileWriter(filePath))) {
+        try (PrintWriter pw = new PrintWriter(new FileWriter(productsCsv))) {
 
             pw.println("productId,name,price,stock");
 
@@ -153,15 +153,18 @@ public class Products {
                     Product p = current.data;
 
                     pw.println(
-                        p.getProductId() + "," +
-                        p.getName() + "," +
-                        p.getPrice() + "," +
-                        p.getStock()
+                            p.getProductId() + "," +
+                            p.getName() + "," +
+                            p.getPrice() + "," +
+                            p.getStock()
                     );
 
                     current = current.right;
                 }
             }
+
+            if (main.VERBOSE) 
+                System.out.println("Products saved successfully to: " + productsCsv);
 
         } catch (Exception e) {
             System.out.println("Error saving products: " + e.getMessage());
